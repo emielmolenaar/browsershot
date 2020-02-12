@@ -119,6 +119,11 @@ const callChrome = async () => {
         } else if (request.options && request.options.waitUntil) {
             requestOptions.waitUntil = request.options.waitUntil;
         }
+      
+        await page._emulationManager._client.send(
+            'Emulation.setDefaultBackgroundColorOverride',
+            { color: { r: 0, g: 0, b: 0, a: 0 } }
+        );
 
         await page.goto(request.url, requestOptions);
 
