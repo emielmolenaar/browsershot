@@ -2,8 +2,7 @@
 
 [![Latest Version](https://img.shields.io/github/release/spatie/browsershot.svg?style=flat-square)](https://github.com/spatie/browsershot/releases)
 [![MIT Licensed](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md)
-[![Build Status](https://img.shields.io/travis/spatie/browsershot/master.svg?style=flat-square)](https://travis-ci.org/spatie/browsershot)
-[![StyleCI](https://styleci.io/repos/19386515/shield?branch=master)](https://styleci.io/repos/19386515)
+[![run-tests](https://github.com/spatie/browsershot/workflows/run-tests/badge.svg)](https://github.com/spatie/browsershot/actions)
 [![Total Downloads](https://img.shields.io/packagist/dt/spatie/browsershot.svg?style=flat-square)](https://packagist.org/packages/spatie/browsershot)
 
 The package can convert a webpage to an image or pdf. The conversion is done behind the scenes by [Puppeteer](https://github.com/GoogleChrome/puppeteer) which controls a headless version of Google Chrome.
@@ -36,7 +35,28 @@ Browsershot also can get the body of an html page after JavaScript has been exec
 Browsershot::url('https://example.com')->bodyHtml(); // returns the html of the body
 ```
 
-Spatie is a webdesign agency in Antwerp, Belgium. You'll find an overview of all our open source projects [on our website](https://spatie.be/opensource).
+If you wish to retrieve an array list with all of the requests that the page triggered you can do so:
+
+```php
+$requests = Browsershot::url('https://example.com')
+    ->triggeredRequests();
+
+foreach ($requests as $request) {
+    $url = $request['url']; //https://example.com/
+}
+```
+
+**`triggeredRequests()` works well with `waitUntilNetworkIdle` as described [here](#waiting-for-lazy-loaded-resources)**
+
+## Support us
+
+Learn how to create a package like this one, by watching our premium video course:
+
+[![Laravel Package training](https://spatie.be/github/package-training.jpg)](https://laravelpackage.training)
+
+We invest a lot of resources into creating [best in class open source packages](https://spatie.be/open-source). You can support us by [buying one of our paid products](https://spatie.be/open-source/support-us).
+
+We highly appreciate you sending us a postcard from your hometown, mentioning which of our package(s) you are using. You'll find our address on [our contact page](https://spatie.be/about-us). We publish all received postcards on [our virtual postcard wall](https://spatie.be/open-source/postcards).
 
 ## Requirements
 
@@ -57,8 +77,8 @@ npm install puppeteer --global
 On a [Forge](https://forge.laravel.com) provisioned Ubuntu 16.04 server you can install the latest stable version of Chrome like this:
 
 ```bash
-curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
-sudo apt-get install -y nodejs gconf-service libasound2 libatk1.0-0 libc6 libcairo2 libcups2 libdbus-1-3 libexpat1 libfontconfig1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 libglib2.0-0 libgtk-3-0 libnspr4 libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6 ca-certificates fonts-liberation libappindicator1 libnss3 lsb-release xdg-utils wget
+curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+sudo apt-get install -y nodejs gconf-service libasound2 libatk1.0-0 libc6 libcairo2 libcups2 libdbus-1-3 libexpat1 libfontconfig1 libgbm1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 libglib2.0-0 libgtk-3-0 libnspr4 libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6 ca-certificates fonts-liberation libappindicator1 libnss3 lsb-release xdg-utils wget libgbm-dev
 sudo npm install --global --unsafe-perm puppeteer
 sudo chmod -R o+rx /usr/lib/node_modules/puppeteer/.local-chromium
 ```
@@ -226,7 +246,6 @@ Browsershot::url('https://example.com')
     ->save($pathToImage);
 ```
 
-
 #### Taking a full page screenshot
 
 You can take a screenshot of the full length of the page by using `fullPage()`.
@@ -263,7 +282,7 @@ Browsershot::url('https://example.com')
 
 #### Device emulation
 
-You can emulate a device view with the `device` method. The devices' names can be found [Here](https://github.com/GoogleChrome/puppeteer/blob/master/lib/DeviceDescriptors.js).
+You can emulate a device view with the `device` method. The devices' names can be found [Here](https://github.com/puppeteer/puppeteer/blob/master/src/DeviceDescriptors.ts).
 
 ```php
 $browsershot = new Browsershot('https://example.com', true);
@@ -322,6 +341,28 @@ Browsershot::url('https://example.com')
     ->save($pathToImage);
 ```
 
+#### Block Urls
+You can completely block connections to specific Urls using the `blockUrls()` method.
+Useful to block advertisements and trackers to make screenshot creation faster.
+
+```php
+$urlsList = array("example.com/cm-notify?pi=outbrain", "sync.outbrain.com/cookie-sync?p=bidswitch");
+Browsershot::url('https://example.com')
+    ->blockUrls($urlsList)
+    ->save($pathToImage);
+```
+    
+#### Block Domains
+You can completely block connections to specific domains using the `blockDomains()` method.
+Useful to block advertisements and trackers to make screenshot creation faster.
+
+```php
+$domainsList = array("googletagmanager.com", "googlesyndication.com", "doubleclick.net", "google-analytics.com");
+Browsershot::url('https://example.com')
+    ->blockDomains($domainsList)
+    ->save($pathToImage);
+```
+
 #### Waiting for lazy-loaded resources
 Some websites lazy-load additional resources via ajax or use webfonts, which might not be loaded in time for the screenshot. Using the `waitUntilNetworkIdle()` method you can tell Browsershot to wait for a period of 500 ms with no network activity before taking the screenshot, ensuring all additional resources are loaded.
 
@@ -367,7 +408,6 @@ Browsershot::url('https://example.com')
     ->setOption('addStyleTag', json_encode(['content' => 'body{ font-size: 14px; }']))
     ->save($pathToImage);
 ```
-
 
 #### Output directly to the browser
 You can output the image directly to the browser using the `screenshot()` method.
@@ -445,7 +485,6 @@ Browsershot::html($someHtml)
 ```
 
 Optionally you can give a custom unit to the `margins` as the fifth parameter.
-
 
 #### Headers and footers
 
@@ -570,7 +609,7 @@ Browsershot::url('https://example.com')
 
 #### Setting the CSS media type of the page
 
-You can emulate the media type, especially usefull when you're generating pdf shots, because it will try to emulate the print version of the page by default.
+You can emulate the media type, especially useful when you're generating pdf shots, because it will try to emulate the print version of the page by default.
 
 ```php
 Browsershot::url('https://example.com')
@@ -588,7 +627,7 @@ Browsershot::url('https://example.com')
 
 #### Disable sandboxing
 
-When running Linux in certain virtualization enviroments it might need to disable sandboxing.
+When running Linux in certain virtualization environments it might need to disable sandboxing.
 
 ```php
 Browsershot::url('https://example.com')
@@ -729,7 +768,6 @@ Browsershot::url('https://example.com')
 
 * Laravel wrapper: [laravel-browsershot](https://github.com/verumconsilium/laravel-browsershot)
 
-
 ## Contributing
 
 Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
@@ -744,25 +782,10 @@ If you're not able to install Node and Puppeteer, take a look at [v2 of browsers
 
 If using headless Chrome does not work for you take a lookat at `v1` of this package which uses the abandoned `PhantomJS` binary.
 
-## Postcardware
-
-You're free to use this package (it's [MIT-licensed](LICENSE.md)), but if it makes it to your production environment we highly appreciate you sending us a postcard from your hometown, mentioning which of our package(s) you are using.
-
-Our address is: Spatie, Samberstraat 69D, 2060 Antwerp, Belgium.
-
-All postcards are published [on our website](https://spatie.be/en/opensource/postcards).
-
 ## Credits
 
 - [Freek Van der Herten](https://github.com/freekmurze)
 - [All Contributors](../../contributors)
-
-## Support us
-
-Spatie is a webdesign agency based in Antwerp, Belgium. You'll find an overview of all our open source projects [on our website](https://spatie.be/opensource).
-
-Does your business depend on our contributions? Reach out and support us on [Patreon](https://www.patreon.com/spatie).
-All pledges will be dedicated to allocating workforce on maintenance and new awesome stuff.
 
 ## License
 

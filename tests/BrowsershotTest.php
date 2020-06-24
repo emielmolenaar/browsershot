@@ -25,6 +25,20 @@ class BrowsershotTest extends TestCase
     }
 
     /** @test */
+    public function it_can_get_the_requests_list()
+    {
+        $list = Browsershot::url('https://example.com')
+            ->triggeredRequests();
+
+        $this->assertCount(1, $list);
+
+        $this->assertEquals(
+            [['url' => 'https://example.com/']],
+            $list
+        );
+    }
+
+    /** @test */
     public function it_can_take_a_screenshot()
     {
         $targetPath = __DIR__.'/temp/testScreenshot.png';
@@ -1314,5 +1328,43 @@ class BrowsershotTest extends TestCase
         file_put_contents($targetPath, $instance->screenshot());
         $this->assertFileExists($targetPath);
         */
+    }
+
+    /** @test */
+    public function it_will_connect_to_a_custom_ws_endpoint_and_take_screenshot()
+    {
+        $instance = Browsershot::url('https://example.com')
+            ->setWSEndpoint('wss://chrome.browserless.io/');
+
+        $this->assertEquals([
+            'url' => 'https://example.com',
+            'action' => 'screenshot',
+            'options' => [
+                'path' => 'screenshot.png',
+                'viewport' => [
+                    'width' => 800,
+                    'height' => 600,
+                ],
+                'args' => [],
+                'type' => 'png',
+                'browserWSEndpoint' => 'wss://chrome.browserless.io/',
+            ],
+        ], $instance->createScreenshotCommand('screenshot.png'));
+
+        // It should be online so mis-use the assetsContains because a 4xx error won't contain the word "browerless".
+        $html = Browsershot::url('https://chrome.browserless.io/json/')
+            ->bodyHtml();
+
+        // If it's offline then this will fail.
+        $this->assertContains('chrome.browserless.io', $html);
+
+        /* Now that we now the domain is online, assert the screenshot.
+         * Although we can't be sure, because Browsershot itself falls back to launching a chromium instance in browser.js
+        */
+
+        $targetPath = __DIR__.'/temp/testScreenshot.png';
+
+        file_put_contents($targetPath, $instance->screenshot());
+        $this->assertFileExists($targetPath);
     }
 }

@@ -1,6 +1,7 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 const URL = require('url').URL;
+const URLParse = require('url').parse;
 
 const [, , ...args] = process.argv;
 
@@ -14,8 +15,16 @@ const request = args[0].startsWith('-f ')
     ? JSON.parse(fs.readFileSync(new URL(args[0].substring(3))))
     : JSON.parse(args[0]);
 
+const requestsList = [];
+
 const getOutput = async (page, request) => {
     let output;
+
+    if (request.action == 'requestsList') {
+        output = JSON.stringify(requestsList);
+
+        return output;
+    }
 
     if (request.action == 'evaluate') {
         output = await page.evaluate(request.options.pageFunction);
@@ -35,12 +44,21 @@ const callChrome = async () => {
     let remoteInstance;
 
     try {
-        if (request.options.remoteInstanceUrl) {
+        if (request.options.remoteInstanceUrl || request.options.browserWSEndpoint ) {
+            // default options
+            let options = {
+                ignoreHTTPSErrors: request.options.ignoreHttpsErrors
+            };
+
+            // choose only one method to connect to the browser instance
+            if ( request.options.remoteInstanceUrl ) {
+                options.browserURL = request.options.remoteInstanceUrl;
+            } else if ( request.options.browserWSEndpoint ) {
+                options.browserWSEndpoint = request.options.browserWSEndpoint;
+            }
+
             try {
-                browser = await puppeteer.connect({
-                    browserURL: request.options.remoteInstanceUrl,
-                    ignoreHTTPSErrors: request.options.ignoreHttpsErrors
-                });
+                browser = await puppeteer.connect( options );
 
                 remoteInstance = true;
             } catch (exception) { /** does nothing. fallbacks to launching a chromium instance */}
@@ -54,20 +72,48 @@ const callChrome = async () => {
             });
         }
 
-
         page = await browser.newPage();
 
         if (request.options && request.options.disableJavascript) {
             await page.setJavaScriptEnabled(false);
         }
 
+        await page.setRequestInterception(true);
+
+        page.on('request', request => {
+            requestsList.push({
+                url: request.url(),
+            });
+            request.continue();
+        });
+
         if (request.options && request.options.disableImages) {
-            await page.setRequestInterception(true);
             page.on('request', request => {
                 if (request.resourceType() === 'image')
                     request.abort();
                 else
                     request.continue();
+            });
+        }
+
+        if (request.options && request.options.blockDomains) {
+            var domainsArray = JSON.parse(request.options.blockDomains);
+            page.on('request', request => {
+                const hostname = URLParse(request.url()).hostname;
+                domainsArray.forEach(function(value){
+                    if (hostname.indexOf(value) >= 0) request.abort();
+                });
+                request.continue();
+            });
+        }
+
+        if (request.options && request.options.blockUrls) {
+            var urlsArray = JSON.parse(request.options.blockUrls);
+            page.on('request', request => {
+                urlsArray.forEach(function(value){
+                    if (request.url().indexOf(value) >= 0) request.abort();
+                });
+                request.continue();
             });
         }
 
