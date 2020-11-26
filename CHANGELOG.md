@@ -2,6 +2,42 @@
 
 All notable changes to `Browsershot` will be documented in this file
 
+## 3.41.0 - 2020-19-11
+
+- adding ability to pass envars to browser instance (#448)
+
+## 3.40.3 - 2020-11-12
+
+- add support for PHP 8
+
+## 3.40.2 - 2020-11-11
+
+- revert changes from previous version
+
+## 3.40.1 - 2020-11-06
+
+- prevent local files from being rendered
+
+## 3.40.0 - 2020-10-07
+
+- added `base64Screenshot`
+
+## 3.39.0 - 2020-09-24
+
+- add `usePipe` to use pipe instead of WebSocket (#423)
+
+## 3.38.0 - 2020-09-22
+
+- pass puppeteer to `callChrome()` (#399)
+
+## 3.37.2 - 2020-07-22
+
+- Replace emulateMedia call with emulateMediaType (#411)
+
+## 3.37.1 - 2020-07-09
+
+- account for the removal of require('puppeteer/DeviceDescriptors') (#406)
+
 ## 3.37.0 - 2020-06-17
 
 - get the list of triggered requests (#402)

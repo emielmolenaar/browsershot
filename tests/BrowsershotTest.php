@@ -10,7 +10,7 @@ use Symfony\Component\Process\Exception\ProcessFailedException;
 
 class BrowsershotTest extends TestCase
 {
-    public function setUp()
+    public function setUp(): void
     {
         $this->emptyTempDirectory();
     }
@@ -21,7 +21,17 @@ class BrowsershotTest extends TestCase
         $html = Browsershot::url('https://example.com')
             ->bodyHtml();
 
-        $this->assertContains('<h1>Example Domain</h1>', $html);
+        $this->assertStringContainsString('<h1>Example Domain</h1>', $html);
+    }
+
+    /** @test */
+    public function it_can_get_the_body_html_when_using_pipe()
+    {
+        $html = Browsershot::url('https://example.com')
+            ->usePipe()
+            ->bodyHtml();
+
+        $this->assertStringContainsString('<h1>Example Domain</h1>', $html);
     }
 
     /** @test */
@@ -44,6 +54,27 @@ class BrowsershotTest extends TestCase
         $targetPath = __DIR__.'/temp/testScreenshot.png';
 
         Browsershot::url('https://example.com')
+            ->save($targetPath);
+
+        $this->assertFileExists($targetPath);
+    }
+
+    /** @test */
+    public function it_can_return_a_screenshot_as_base_64()
+    {
+        $base64 = Browsershot::url('https://example.com')
+            ->base64Screenshot();
+
+        $this->assertTrue(is_string($base64));
+    }
+
+    /** @test */
+    public function it_can_take_a_screenshot_when_using_pipe()
+    {
+        $targetPath = __DIR__.'/temp/testScreenshot.png';
+
+        Browsershot::url('https://example.com')
+            ->usePipe()
             ->save($targetPath);
 
         $this->assertFileExists($targetPath);
@@ -154,6 +185,25 @@ class BrowsershotTest extends TestCase
         $targetPath = __DIR__.'/temp/customPdf.pdf';
 
         Browsershot::url('https://example.com')
+            ->hideBrowserHeaderAndFooter()
+            ->showBackground()
+            ->landscape()
+            ->margins(5, 25, 5, 25)
+            ->pages('1')
+            ->savePdf($targetPath);
+
+        $this->assertFileExists($targetPath);
+
+        $this->assertEquals('application/pdf', mime_content_type($targetPath));
+    }
+
+    /** @test */
+    public function it_can_save_a_highly_customized_pdf_when_using_pipe()
+    {
+        $targetPath = __DIR__.'/temp/customPdf.pdf';
+
+        Browsershot::url('https://example.com')
+            ->usePipe()
             ->hideBrowserHeaderAndFooter()
             ->showBackground()
             ->landscape()
@@ -499,6 +549,29 @@ class BrowsershotTest extends TestCase
                     'height' => 600,
                 ],
                 'emulateMedia' => null,
+                'args' => [],
+                'type' => 'png',
+            ],
+        ], $command);
+    }
+
+    /** @test */
+    public function it_can_use_pipe()
+    {
+        $command = Browsershot::url('https://example.com')
+            ->usePipe()
+            ->createScreenshotCommand('screenshot.png');
+
+        $this->assertEquals([
+            'url' => 'https://example.com',
+            'action' => 'screenshot',
+            'options' => [
+                'path' => 'screenshot.png',
+                'viewport' => [
+                    'width' => 800,
+                    'height' => 600,
+                ],
+                'pipe' => true,
                 'args' => [],
                 'type' => 'png',
             ],
@@ -1356,7 +1429,7 @@ class BrowsershotTest extends TestCase
             ->bodyHtml();
 
         // If it's offline then this will fail.
-        $this->assertContains('chrome.browserless.io', $html);
+        $this->assertStringContainsString('chrome.browserless.io', $html);
 
         /* Now that we now the domain is online, assert the screenshot.
          * Although we can't be sure, because Browsershot itself falls back to launching a chromium instance in browser.js
@@ -1366,5 +1439,31 @@ class BrowsershotTest extends TestCase
 
         file_put_contents($targetPath, $instance->screenshot());
         $this->assertFileExists($targetPath);
+    }
+
+    /** @test */
+    public function it_will_allow_passing_environment_variables()
+    {
+        $instance = Browsershot::url('https://example.com')
+            ->setEnvironmentOptions([
+                'TZ' => 'Pacific/Auckland',
+            ]);
+
+        $this->assertEquals([
+            'url' => 'https://example.com',
+            'action' => 'screenshot',
+            'options' => [
+                'path' => 'screenshot.png',
+                'viewport' => [
+                    'width' => 800,
+                    'height' => 600,
+                ],
+                'args' => [],
+                'type' => 'png',
+                'env' => [
+                    'TZ' => 'Pacific/Auckland',
+                ],
+            ],
+        ], $instance->createScreenshotCommand('screenshot.png'));
     }
 }
