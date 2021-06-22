@@ -217,6 +217,15 @@ class BrowsershotTest extends TestCase
     }
 
     /** @test */
+    public function it_can_return_a_pdf_as_base_64()
+    {
+        $base64 = Browsershot::url('https://example.com')
+            ->base64pdf();
+
+        $this->assertTrue(is_string($base64));
+    }
+
+    /** @test */
     public function it_can_handle_a_permissions_error()
     {
         $targetPath = '/cantWriteThisPdf.png';
@@ -978,6 +987,29 @@ class BrowsershotTest extends TestCase
     }
 
     /** @test */
+    public function it_can_send_post_request()
+    {
+        $command = Browsershot::url('https://example.com')
+            ->post(['foo' => 'bar'])
+            ->createScreenshotCommand('screenshot.png');
+
+        $this->assertEquals([
+            'url' => 'https://example.com',
+            'postParams' => ['foo' => 'bar'],
+            'action' => 'screenshot',
+            'options' => [
+                'path' => 'screenshot.png',
+                'viewport' => [
+                    'width' => 800,
+                    'height' => 600,
+                ],
+                'args' => [],
+                'type' => 'png',
+            ],
+        ], $command);
+    }
+
+    /** @test */
     public function it_can_click_on_the_page()
     {
         $command = Browsershot::url('https://example.com')
@@ -1465,5 +1497,17 @@ class BrowsershotTest extends TestCase
                 ],
             ],
         ], $instance->createScreenshotCommand('screenshot.png'));
+    }
+
+    /** @test */
+    public function it_can_take_a_scaled_screenshot()
+    {
+        $targetPath = __DIR__.'/temp/testScreenshot.pdf';
+
+        Browsershot::url('https://example.com')
+            ->scale(0.5)
+            ->save($targetPath);
+
+        $this->assertFileExists($targetPath);
     }
 }

@@ -2,6 +2,30 @@
 
 All notable changes to `Browsershot` will be documented in this file
 
+## 3.47.0 - 2021-06-10
+
+- re-add support for symfony/process:^4.2
+
+## 3.46.0 - 2021-05-24
+
+- add `base64pdf` method (#512)
+
+## 3.45.0 - 2021-04-20
+
+- add ability to make POST requests (#496)
+
+## 3.44.1. - 2021-04-09
+
+- bump temporary-directory to version 2.0 (#495)
+
+## 3.44.0 - 2021-02-05
+
+- add scale option (#478)
+
+## 3.43.0 - 2021-01-29
+
+- add support for scale option in PDF (#478)
+
 ## 3.42.0 - 2021-01-11
 
 - introduce a selectorIndex to bypass querySelector restrictions (#468)
